@@ -60,7 +60,6 @@ export default function App() {
           <span className="logo-mark" aria-hidden="true" />
           PDF Insight
         </button>
-        <span className="muted topbar-note">Historia analiz zostaje w tej przeglądarce</span>
       </header>
 
       <main className="page">
@@ -68,7 +67,7 @@ export default function App() {
           <>
             <section className="hero">
               <div className="hero-copy">
-                <h1>Wgraj PDF. Ważne rzeczy zaznaczymy za Ciebie.</h1>
+                <h1>Wgraj PDF. Ważne rzeczy zaznaczymy za{'\u00a0'}ciebie.</h1>
                 <p className="lead">
                   Krótkie podsumowanie, kwoty, terminy i strony dokumentu, wyciągnięte z pliku w
                   kilka sekund i gotowe do pobrania jako JSON.
@@ -78,9 +77,9 @@ export default function App() {
                   onSample={() => setState({ kind: 'done', result: SAMPLE_RESULT, isSample: true })}
                 />
                 <p className="privacy">
-                  Do analizy wysyłamy tekst z pliku, nie sam plik. Trafia on przez nasz serwer do
-                  Google Gemini API i nigdzie go nie zapisujemy. W darmowym planie Google może
-                  wykorzystywać przesłane treści, więc nie wgrywaj dokumentów poufnych.
+                  Wysyłamy tylko tekst z pliku, nie sam plik: przez nasz serwer do Google Gemini
+                  API. Niczego nie zapisujemy. W darmowym planie Google może wykorzystywać przesłane
+                  treści, więc nie wgrywaj poufnych dokumentów.
                 </p>
               </div>
               <SampleSheet />

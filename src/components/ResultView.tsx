@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { downloadJson, jsonFileName } from '../lib/download'
 import { findMarks, toSegments, type MarkKind } from '../lib/highlight'
 import { toExportJson, type AnalysisResult } from '../lib/schema'
+import { bindShortWords, keepTogether, plural } from '../lib/text'
 
 const typeLabels: Record<AnalysisResult['document']['type'], string> = {
   faktura: 'Faktura',
@@ -12,6 +13,13 @@ const typeLabels: Record<AnalysisResult['document']['type'], string> = {
 }
 
 const languageNames = new Intl.DisplayNames(['pl'], { type: 'language' })
+
+// Tekst dla czytnikow ekranu - kolor zaznaczenia nie moze byc jedynym nosnikiem informacji.
+const markSpoken: Record<MarkKind, string> = {
+  amount: 'kwota',
+  date: 'data',
+  party: 'strona umowy',
+}
 
 const markLabels: Record<MarkKind, string> = {
   amount: 'Kwoty',
@@ -92,7 +100,7 @@ function Amounts({ amounts }: { amounts: AnalysisResult['amounts'] }) {
                 .map((a, i) => (
                   <tr key={`${a.value}-${i}`}>
                     <td className="num">{formatAmount(a.value, a.currency)}</td>
-                    <td>{a.context}</td>
+                    <td>{bindShortWords(a.context)}</td>
                   </tr>
                 ))}
             </tbody>
@@ -142,13 +150,15 @@ function Parties({ entities }: { entities: AnalysisResult['entities'] }) {
   const hidden = people.length - visiblePeople.length
   return (
     <>
+      {organizations.length > 0 && <p className="chips-label">Firmy i instytucje</p>}
       {organizations.length > 0 && (
-        <ul className="chips chips-party" aria-label="Organizacje">
+        <ul className="chips chips-party" aria-label="Firmy i instytucje">
           {organizations.map((name, i) => (
             <li key={`${i}-${name}`}>{name}</li>
           ))}
         </ul>
       )}
+      {people.length > 0 && <p className="chips-label">Osoby</p>}
       {people.length > 0 && (
         <ul className="chips chips-party" aria-label="Osoby">
           {visiblePeople.map((name, i) => (
@@ -157,7 +167,7 @@ function Parties({ entities }: { entities: AnalysisResult['entities'] }) {
           {hidden > 0 && (
             <li>
               <button type="button" className="link" onClick={() => setAll(true)}>
-                +{hidden} {hidden === 1 ? 'osoba' : hidden < 5 ? 'osoby' : 'osób'}
+                +{hidden} {plural(hidden, 'osoba', 'osoby', 'osób')}
               </button>
             </li>
           )}
@@ -177,7 +187,7 @@ export function ResultView({
   onNew: () => void
 }) {
   const [tab, setTab] = useState<TabId>('view')
-  const [copied, setCopied] = useState(false)
+  const [copyState, setCopyState] = useState<'idle' | 'done' | 'failed'>('idle')
   const [shown, setShown] = useState<Record<MarkKind, boolean>>({
     amount: true,
     date: true,
@@ -188,6 +198,15 @@ export function ResultView({
   const { document: doc } = result
   const json = toExportJson(result)
   const segments = toSegments(result.summary, findMarks(result.summary, result))
+
+  // Tytul karty przegladarki z nazwa dokumentu.
+  useEffect(() => {
+    const previous = document.title
+    document.title = `${doc.title ?? doc.fileName} - PDF Insight`
+    return () => {
+      document.title = previous
+    }
+  }, [doc.title, doc.fileName])
 
   // Po pokazaniu wyniku fokus trafia na tytul - czytnik ekranu i klawiatura zaczynaja od wyniku.
   useEffect(() => headingRef.current?.focus(), [])
@@ -213,15 +232,15 @@ export function ResultView({
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(json)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      setCopyState('done')
     } catch {
-      setCopied(false)
+      setCopyState('failed')
     }
+    setTimeout(() => setCopyState('idle'), 2000)
   }
 
   const facts = [
-    `${doc.pages} ${doc.pages === 1 ? 'strona' : doc.pages < 5 ? 'strony' : 'stron'}`,
+    `${doc.pages} ${plural(doc.pages, 'strona', 'strony', 'stron')}`,
     languageName(doc.language),
     ...(doc.date ? [`z dnia ${formatDate(doc.date)}`] : []),
     doc.fileName,
@@ -240,7 +259,7 @@ export function ResultView({
         <span className="stamp">{typeLabels[doc.type]}</span>
         <div className="result-title">
           <h1 ref={headingRef} tabIndex={-1}>
-            {doc.title ?? doc.fileName}
+            {bindShortWords(doc.title ?? doc.fileName)}
           </h1>
           <ul className="facts">
             {facts.map((fact) => (
@@ -251,7 +270,7 @@ export function ResultView({
         <div className="actions">
           <button
             type="button"
-            className="btn btn-pen"
+            className="btn btn-ink"
             onClick={() => downloadJson(json, jsonFileName(doc.fileName))}
           >
             Pobierz JSON
@@ -295,37 +314,44 @@ export function ResultView({
 
       {tab === 'view' ? (
         <div id="panel-view" role="tabpanel" aria-labelledby="tab-view">
-          <div className="toggles" role="group" aria-label="Zaznaczenia w podsumowaniu">
-            {(Object.keys(markLabels) as MarkKind[]).map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                className={`toggle toggle-${kind}`}
-                aria-pressed={shown[kind]}
-                onClick={() => setShown({ ...shown, [kind]: !shown[kind] })}
-              >
-                <span className="swatch" aria-hidden="true" />
-                {markLabels[kind]}
-              </button>
-            ))}
+          <div className="summary-wrap">
+            <div className="toggles" role="group" aria-label="Zaznaczenia w podsumowaniu">
+              <p className="toggles-label">Zaznaczenia w podsumowaniu</p>
+              {(Object.keys(markLabels) as MarkKind[]).map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  className={`toggle toggle-${kind}`}
+                  aria-pressed={shown[kind]}
+                  onClick={() => setShown({ ...shown, [kind]: !shown[kind] })}
+                >
+                  <span className="swatch" aria-hidden="true" />
+                  {markLabels[kind]}
+                </button>
+              ))}
+            </div>
+            <article className="sheet summary" aria-label="Podsumowanie">
+              <p>
+                {segments.map((s, i) =>
+                  s.kind && shown[s.kind] ? (
+                    <mark key={i} className={`hl-${s.kind}`}>
+                      <span className="sr-only">{markSpoken[s.kind]}: </span>
+                      {keepTogether(s.text)}
+                    </mark>
+                  ) : (
+                    <span key={i}>{bindShortWords(s.text)}</span>
+                  ),
+                )}
+              </p>
+            </article>
           </div>
-          <article className="sheet summary" aria-label="Podsumowanie">
-            <p>
-              {segments.map((s, i) =>
-                s.kind && shown[s.kind] ? (
-                  <mark key={i} className={`hl-${s.kind}`}>
-                    {s.text}
-                  </mark>
-                ) : (
-                  <span key={i}>{s.text}</span>
-                ),
-              )}
-            </p>
-          </article>
 
           <div className="columns">
             <section className="block">
-              <h2>Najważniejsze punkty</h2>
+              <h2>
+                <span className="swatch swatch-none" aria-hidden="true" />
+                Najważniejsze punkty
+              </h2>
               <ul className="points">
                 {result.keyPoints.map((point, i) => (
                   <li key={`${i}-${point}`}>{point}</li>
@@ -336,7 +362,7 @@ export function ResultView({
             <section className="block">
               <h2>
                 <span className="swatch swatch-date" aria-hidden="true" />
-                Daty <small>w kolejności</small>
+                Daty <small>chronologicznie</small>
               </h2>
               <Timeline dates={result.dates} from={doc.date} />
             </section>
@@ -347,13 +373,7 @@ export function ResultView({
                 Kwoty{' '}
                 <small>
                   {result.amounts.length}{' '}
-                  {result.amounts.length === 1
-                    ? 'pozycja'
-                    : result.amounts.length % 10 >= 2 &&
-                        result.amounts.length % 10 <= 4 &&
-                        (result.amounts.length < 10 || result.amounts.length > 20)
-                      ? 'pozycje'
-                      : 'pozycji'}
+                  {plural(result.amounts.length, 'pozycja', 'pozycje', 'pozycji')}
                 </small>
               </h2>
               <Amounts amounts={result.amounts} />
@@ -368,10 +388,10 @@ export function ResultView({
               {result.keywords.length > 0 && (
                 <>
                   <h2 className="mt">
-                    <span className="swatch swatch-key" aria-hidden="true" />
+                    <span className="swatch swatch-none" aria-hidden="true" />
                     Słowa kluczowe
                   </h2>
-                  <ul className="chips chips-key">
+                  <ul className="chips">
                     {result.keywords.map((k, i) => (
                       <li key={`${i}-${k}`}>{k}</li>
                     ))}
@@ -384,11 +404,21 @@ export function ResultView({
       ) : (
         <div id="panel-json" role="tabpanel" aria-labelledby="tab-json">
           <div className="json-bar">
-            <span className="muted">Wynik sprawdzony schematem, {json.length} znaków</span>
+            <span className="muted">
+              Zgodny ze schematem, {json.length} {plural(json.length, 'znak', 'znaki', 'znaków')}
+            </span>
             <button type="button" className="btn btn-outline btn-small" onClick={copy}>
-              {copied ? 'Skopiowano' : 'Kopiuj'}
+              {copyState === 'done' ? 'Skopiowano' : 'Kopiuj'}
             </button>
+            <span className="sr-only" aria-live="polite">
+              {copyState === 'done' ? 'Skopiowano JSON do schowka' : ''}
+            </span>
           </div>
+          {copyState === 'failed' && (
+            <p className="muted" role="status">
+              Przeglądarka nie pozwoliła skopiować. Zaznacz tekst poniżej albo pobierz plik JSON.
+            </p>
+          )}
           <pre className="json" tabIndex={0}>
             {json}
           </pre>

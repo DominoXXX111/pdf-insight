@@ -6,17 +6,18 @@ export function SampleSheet() {
         className="sheet sheet-tilted"
         aria-label="Przykład: fragment umowy z zaznaczonymi danymi"
       >
-        <p className="sheet-title">Umowa serwisowa nr 7/2026</p>
+        <p className="sheet-title">Umowa serwisowa nr&nbsp;7/2026</p>
         <p>
-          Zawarta w Poznaniu dnia <mark className="hl-date">2 listopada 2026 r.</mark> pomiędzy{' '}
-          <mark className="hl-party">Alfa Serwis sp. z o.o.</mark> a{' '}
-          <mark className="hl-party">Pracownią Delta S.A.</mark>, reprezentowaną przez{' '}
-          <mark className="hl-party">Martę Wiśniewską</mark>.
+          Zawarta w Poznaniu dnia{' '}
+          <mark className="hl-date">2&nbsp;listopada&nbsp;2026&nbsp;r.</mark> pomiędzy{' '}
+          <mark className="hl-party">Alfa&nbsp;Serwis&nbsp;sp.&nbsp;z&nbsp;o.o.</mark> a{' '}
+          <mark className="hl-party">Pracownią&nbsp;Delta&nbsp;S.A.</mark>, reprezentowaną przez{' '}
+          <mark className="hl-party">Martę&nbsp;Wiśniewską</mark>.
         </p>
         <p>
           Za obsługę serwisową Zleceniodawca zapłaci{' '}
-          <mark className="hl-amount">4 800,00 zł netto</mark> miesięcznie, począwszy od{' '}
-          <mark className="hl-date">1 grudnia 2026 r.</mark>
+          <mark className="hl-amount">4&nbsp;800,00&nbsp;zł&nbsp;netto</mark> miesięcznie, począwszy
+          od <mark className="hl-date">1&nbsp;grudnia&nbsp;2026&nbsp;r.</mark>
         </p>
       </div>
       <pre className="json-peek" aria-label="Fragment wyniku w formacie JSON">

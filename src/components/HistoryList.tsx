@@ -19,6 +19,7 @@ export function HistoryList({ entries, onOpen, onRemove, onClear }: Props) {
           Wyczyść historię
         </button>
       </div>
+      <p className="muted history-note">Zapisane tylko w tej przeglądarce.</p>
       <ul>
         {entries.map((entry) => (
           <li key={entry.id}>

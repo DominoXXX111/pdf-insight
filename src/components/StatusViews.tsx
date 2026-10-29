@@ -30,7 +30,7 @@ export function Progress({
     return () => clearInterval(timer)
   }, [])
 
-  const steps = ['Wgranie', 'Odczyt tekstu', 'Analiza AI', 'Wynik']
+  const steps = ['Plik', 'Odczyt tekstu', 'Analiza AI', 'Wynik']
   const active = stage.step === 'reading' ? 1 : 2
 
   return (
@@ -85,7 +85,11 @@ export function ErrorBox({
             Spróbuj ponownie
           </button>
         )}
-        <button type="button" className="btn btn-outline" onClick={onReset}>
+        <button
+          type="button"
+          className={onRetry ? 'btn btn-outline' : 'btn btn-ink'}
+          onClick={onReset}
+        >
           Wybierz inny plik
         </button>
       </div>

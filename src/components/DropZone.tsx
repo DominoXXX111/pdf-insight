@@ -1,11 +1,24 @@
-import { useId, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useId, useRef, useState, type DragEvent } from 'react'
 
 type Props = { onFile: (file: File) => void; onSample: () => void }
 
 export function DropZone({ onFile, onSample }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const hintId = useId()
+  // Licznik wejsc/wyjsc - dragleave odpala sie tez nad elementami w srodku strefy.
+  const depth = useRef(0)
   const [dragging, setDragging] = useState(false)
+
+  // Plik upuszczony obok strefy nie moze otworzyc sie w karcie i skasowac stanu aplikacji.
+  useEffect(() => {
+    const block = (event: globalThis.DragEvent) => event.preventDefault()
+    window.addEventListener('dragover', block)
+    window.addEventListener('drop', block)
+    return () => {
+      window.removeEventListener('dragover', block)
+      window.removeEventListener('drop', block)
+    }
+  }, [])
 
   const pick = (files: FileList | null) => {
     const file = files?.[0]
@@ -14,6 +27,7 @@ export function DropZone({ onFile, onSample }: Props) {
 
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    depth.current = 0
     setDragging(false)
     pick(event.dataTransfer.files)
   }
@@ -21,16 +35,34 @@ export function DropZone({ onFile, onSample }: Props) {
   return (
     <div
       className={`drop${dragging ? ' is-dragging' : ''}`}
-      onDragOver={(event) => {
+      onDragEnter={(event) => {
         event.preventDefault()
+        depth.current += 1
         setDragging(true)
       }}
-      onDragLeave={() => setDragging(false)}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={() => {
+        depth.current = Math.max(0, depth.current - 1)
+        if (depth.current === 0) setDragging(false)
+      }}
       onDrop={onDrop}
+      onClick={(event) => {
+        // Klikniecie w puste miejsce strefy tez otwiera wybor pliku.
+        if (event.target === event.currentTarget) inputRef.current?.click()
+      }}
     >
-      <p className="drop-title">{dragging ? 'Puść, żeby przeanalizować' : 'Upuść tu plik PDF'}</p>
+      <p className="drop-title">
+        {dragging ? (
+          'Puść, żeby przeanalizować'
+        ) : (
+          <>
+            <span className="on-pointer">Upuść tu plik PDF</span>
+            <span className="on-touch">Wybierz plik PDF</span>
+          </>
+        )}
+      </p>
       <p id={hintId} className="drop-hint">
-        Umowa, faktura, oferta albo raport z warstwą tekstową, do 10 MB.
+        Umowa, faktura, oferta albo raport z tekstem (nie skan), do 10 MB.
       </p>
       <div className="actions">
         <button

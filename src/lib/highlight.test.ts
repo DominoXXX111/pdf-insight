@@ -94,3 +94,28 @@ describe('cleanAnalysis', () => {
     expect(cleaned.dates).toHaveLength(2)
   })
 })
+
+describe('teksty po polsku', () => {
+  it('odmienia liczebniki', async () => {
+    const { plural } = await import('./text')
+    const f = (n: number) => `${n} ${plural(n, 'strona', 'strony', 'stron')}`
+    expect([1, 2, 4, 5, 12, 13, 22, 25, 104, 112].map(f)).toEqual([
+      '1 strona',
+      '2 strony',
+      '4 strony',
+      '5 stron',
+      '12 stron',
+      '13 stron',
+      '22 strony',
+      '25 stron',
+      '104 strony',
+      '112 stron',
+    ])
+  })
+
+  it('wiaze krotkie slowa i krotkie zaznaczenia twarda spacja', async () => {
+    const { bindShortWords, keepTogether } = await import('./text')
+    expect(bindShortWords('Umowa nr 7 z firmą a w nim')).toBe('Umowa nr 7 z firmą a w nim')
+    expect(keepTogether('4 800,00 zł netto')).toBe('4 800,00 zł netto')
+  })
+})

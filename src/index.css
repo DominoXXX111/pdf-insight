@@ -5,15 +5,17 @@
   --ink: #17203a;
   --ink-soft: #55607a;
   --rule: #d5dbe5;
-  --dash: #9aa6bd;
-  --pen: #2343c9;
+  --dash: #7d8aa3;
+  --pen: #17203a;
   --pen-text: #ffffff;
+  --danger: #c23b3b;
   --hl-amount: #ffe357;
   --hl-date: #a9d8ff;
   --hl-party: #ffb8d4;
   --hl-key: #c4efb8;
   --hl-text: #17203a;
-  --timeline-dot: #3d8fd6;
+  --timeline-dot: #3f7fb8;
+  --timeline-line: #8fc3ee;
   --code-bg: #17203a;
   --code-text: #dfe5f2;
   --code-soft: #8e9ab5;
@@ -33,13 +35,16 @@
     --ink-soft: #a3adc2;
     --rule: #2e3646;
     --dash: #4b5670;
-    --pen: #8ea2ff;
-    --pen-text: #10162a;
-    --hl-amount: #e9cf45;
-    --hl-date: #8cc4f2;
-    --hl-party: #f0a1c1;
-    --hl-key: #a9dc9c;
+    --pen: #e8ecf4;
+    --pen-text: #11151f;
+    --danger: #ff8a80;
+    --dash: #6b7790;
+    --hl-amount: #c9b23a;
+    --hl-date: #6fa7d6;
+    --hl-party: #d083a3;
+    --hl-key: #8fbf82;
     --timeline-dot: #8cc4f2;
+    --timeline-line: #4d7aa3;
     --code-bg: #0b0f18;
     --warn-bg: #1b2130;
     --shadow: 0 0 0 1px var(--rule);
@@ -72,6 +77,38 @@ p {
 
 [tabindex='-1']:focus {
   outline: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+#root > * {
+  width: 100%;
+}
+
+#root > main {
+  flex: 1;
+}
+
+h1 {
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
 }
 
 .muted {
@@ -281,6 +318,27 @@ mark,
   border-style: solid;
 }
 
+.drop {
+  cursor: pointer;
+}
+
+.on-touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .on-pointer {
+    display: none;
+  }
+  .on-touch {
+    display: inline;
+  }
+  .toggle,
+  .link {
+    min-height: 44px;
+  }
+}
+
 .drop-title {
   font-size: 1.3125rem;
   font-weight: 600;
@@ -363,6 +421,12 @@ mark,
   margin-right: 0.4rem;
   border-radius: 2px;
   background: var(--hl);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--hl), var(--ink) 30%);
+}
+
+.swatch-none {
+  --hl: transparent;
+  box-shadow: inset 0 0 0 2px var(--ink);
 }
 
 .legend-amount,
@@ -379,9 +443,6 @@ mark,
 .swatch-party,
 .toggle-party {
   --hl: var(--hl-party);
-}
-.swatch-key {
-  --hl: var(--hl-key);
 }
 
 /* --- historia --- */
@@ -574,7 +635,7 @@ mark,
   margin: 48px auto;
   padding: 1.75rem;
   background: var(--sheet);
-  border-left: 6px solid #d64545;
+  border-left: 6px solid var(--danger);
   border-radius: 0 6px 6px 0;
   box-shadow: var(--shadow);
   display: grid;
@@ -590,7 +651,8 @@ mark,
 .sample-note {
   margin-bottom: 1rem;
   padding: 0.7rem 1rem;
-  border: 2px dashed var(--dash);
+  background: color-mix(in oklab, var(--hl-amount) 30%, var(--sheet));
+  color: var(--hl-text);
   border-radius: 6px;
   font-size: 0.9375rem;
 }
@@ -683,11 +745,25 @@ mark,
   border-bottom-color: var(--ink);
 }
 
+.summary-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 46rem) minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: start;
+}
+
 .toggles {
+  order: 2;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 0.9rem;
+  padding-top: 0.5rem;
+}
+
+.toggles-label {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
 }
 
 .toggle {
@@ -787,7 +863,7 @@ mark,
   margin: 0;
   padding: 0 0 0 1.1rem;
   list-style: none;
-  border-left: 2px solid var(--hl-date);
+  border-left: 2px solid var(--timeline-line);
 }
 
 .timeline li {
@@ -806,6 +882,10 @@ mark,
   border-radius: 50%;
   background: var(--sheet);
   border: 3px solid var(--timeline-dot);
+}
+
+.timeline li:last-child {
+  padding-bottom: 0;
 }
 
 .timeline time {
@@ -867,12 +947,14 @@ mark,
   overflow-wrap: anywhere;
 }
 
-.chips-party li {
-  box-shadow: inset 0 -5px 0 var(--hl-party);
+.chips-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
 }
 
-.chips-key li {
-  box-shadow: inset 0 -5px 0 var(--hl-key);
+.chips-party li {
+  box-shadow: inset 0 -5px 0 var(--hl-party);
 }
 
 .chips li:has(> .link) {
@@ -880,8 +962,13 @@ mark,
   border-style: dashed;
 }
 
+.history-note {
+  margin-bottom: 0.4rem;
+}
+
 .json-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
@@ -897,6 +984,8 @@ mark,
   background: var(--code-bg);
   color: var(--code-text);
   font: 0.8125rem/1.55 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* --- telefon i tablet --- */
@@ -909,6 +998,63 @@ mark,
 
   .sheet-tilted {
     transform: none;
+  }
+
+  /* Na telefonie przyklad z zaznaczeniami przed drobnym tekstem o prywatnosci. */
+  .hero {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-copy {
+    display: contents;
+  }
+
+  .hero-sample {
+    order: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .privacy {
+    order: 2;
+    margin-top: 0;
+  }
+
+  .summary-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.9rem;
+  }
+
+  .toggles {
+    order: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-top: 0;
+  }
+
+  .toggles-label {
+    width: 100%;
+  }
+
+  .timeline {
+    margin-left: 0.4rem;
+  }
+
+  .amounts .num {
+    width: auto;
+  }
+
+  .json {
+    max-height: none;
+  }
+
+  .steps {
+    gap: 0.3rem;
+  }
+
+  .steps li {
+    padding: 0.1rem 0.5rem;
   }
 
   .hero-sample .sheet,
@@ -942,9 +1088,5 @@ mark,
 
   .reading-sheet {
     max-width: 260px;
-  }
-
-  .topbar-note {
-    display: none;
   }
 }
