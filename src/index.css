@@ -27,14 +27,14 @@
   color-scheme: light dark;
 }
 
+/* Ciemny motyw: z ustawien systemu albo wybrany recznie (data-theme na <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --page: #11151f;
     --sheet: #1b2130;
     --ink: #e8ecf4;
     --ink-soft: #a3adc2;
     --rule: #2e3646;
-    --dash: #4b5670;
     --pen: #e8ecf4;
     --pen-text: #11151f;
     --danger: #ff8a80;
@@ -48,7 +48,34 @@
     --code-bg: #0b0f18;
     --warn-bg: #1b2130;
     --shadow: 0 0 0 1px var(--rule);
+    color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --page: #11151f;
+  --sheet: #1b2130;
+  --ink: #e8ecf4;
+  --ink-soft: #a3adc2;
+  --rule: #2e3646;
+  --pen: #e8ecf4;
+  --pen-text: #11151f;
+  --danger: #ff8a80;
+  --dash: #6b7790;
+  --hl-amount: #c9b23a;
+  --hl-date: #6fa7d6;
+  --hl-party: #d083a3;
+  --hl-key: #8fbf82;
+  --timeline-dot: #8cc4f2;
+  --timeline-line: #4d7aa3;
+  --code-bg: #0b0f18;
+  --warn-bg: #1b2130;
+  --shadow: 0 0 0 1px var(--rule);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
 }
 
 * {
@@ -334,7 +361,8 @@ mark,
     display: inline;
   }
   .toggle,
-  .link {
+  .link,
+  .theme-toggle {
     min-height: 44px;
   }
 }
@@ -651,10 +679,61 @@ mark,
 .sample-note {
   margin-bottom: 1rem;
   padding: 0.7rem 1rem;
-  background: color-mix(in oklab, var(--hl-amount) 30%, var(--sheet));
-  color: var(--hl-text);
-  border-radius: 6px;
+  background: var(--sheet);
+  color: var(--ink);
+  border-left: 6px solid var(--hl-amount);
+  border-radius: 0 6px 6px 0;
+  box-shadow: var(--shadow);
   font-size: 0.9375rem;
+}
+
+/* --- powrot i przelacznik motywu --- */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  margin-bottom: 0.5rem;
+  padding: 0 0.2rem;
+  font: 600 0.9375rem var(--ui);
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.back svg,
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.back:hover span {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  padding: 0.3rem 0.9rem;
+  font: 600 0.875rem var(--ui);
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--ink);
 }
 
 .result-head {
