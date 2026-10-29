@@ -1,0 +1,16 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "pdf-insight-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "vars": {
+    "GEMINI_MODEL": "gemini-2.5-flash",
+    "ALLOWED_ORIGINS": "https://dominoxxx111.github.io",
+  },
+  // Limit zapytan na adres IP (darmowy mechanizm Cloudflare): 10 analiz na minute.
+  "ratelimits": [
+    { "name": "LIMITER", "namespace_id": "4201", "simple": { "limit": 10, "period": 60 } },
+  ],
+}
