@@ -3,6 +3,7 @@ import { splitIntoChunks } from './chunk'
 import { cleanAnalysis } from './clean'
 import { checkFileBasics, hasPdfHeader } from './file'
 import { describePartsForOverall, mergeChunkResults } from './merge'
+import { normalizeAiResult } from './normalize'
 import { extractPdfText, PdfReadError } from './pdf'
 import {
   aiAnalysisSchema,
@@ -35,7 +36,7 @@ export async function analyzeValidated(
 ): Promise<{ model: string; analysis: AiAnalysis }> {
   for (let attempt = 1; attempt <= 2; attempt++) {
     const { model, result } = await request(body, signal)
-    const parsed = aiAnalysisSchema.safeParse(result)
+    const parsed = aiAnalysisSchema.safeParse(normalizeAiResult(result))
     if (parsed.success) return { model, analysis: parsed.data }
   }
   throw new AnalysisError(
@@ -109,7 +110,7 @@ export async function analyzePdf(
       )
     }
     if (!analysis) throw new AnalysisError('Brak wyniku analizy.', true)
-    analysis = cleanAnalysis(analysis)
+    analysis = cleanAnalysis(analysis, pdf.pageTexts.join('\n'))
 
     const warnings = [...analysis.warnings]
     if (pdf.pagesWithoutText.length > 0) {

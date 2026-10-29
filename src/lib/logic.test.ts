@@ -100,3 +100,32 @@ describe('analyzeValidated - ponowna proba', () => {
     expect(request).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('normalizacja odpowiedzi AI przed walidacja', () => {
+  it('zamienia zl na PLN i usuwa kwoty z nieznana waluta, reszta przechodzi schemat', async () => {
+    const { normalizeAiResult } = await import('./normalize')
+    const { aiAnalysisSchema } = await import('./schema')
+    const raw = {
+      ...analysis(),
+      document: { ...analysis().document, language: 'PL' },
+      amounts: [
+        { value: 184500, currency: 'zł', context: 'wdrożenie' },
+        { value: 10, currency: '€', context: 'opłata' },
+        { value: 5, currency: 'punkty', context: 'nie waluta' },
+      ],
+    }
+    expect(aiAnalysisSchema.safeParse(raw).success).toBe(false)
+    const parsed = aiAnalysisSchema.parse(normalizeAiResult(raw))
+    expect(parsed.amounts.map((a) => a.currency)).toEqual(['PLN', 'EUR'])
+    expect(parsed.document.language).toBe('pl')
+  })
+
+  it('odpowiedz z waluta zl przechodzi bez ponownej proby', async () => {
+    const request = vi.fn().mockResolvedValue({
+      model: 'm',
+      result: { ...analysis(), amounts: [{ value: 1, currency: 'zł', context: 'x' }] },
+    })
+    await analyzeValidated({ fileName: 'a.pdf', pages: 1, text: 't' }, undefined, request)
+    expect(request).toHaveBeenCalledTimes(1)
+  })
+})

@@ -119,3 +119,32 @@ describe('teksty po polsku', () => {
     expect(keepTogether('4 800,00 zł netto')).toBe('4 800,00 zł netto')
   })
 })
+
+describe('daty nieobecne w tekscie', () => {
+  const text =
+    'Zawarta 12.03.2026 r., start 1 kwietnia 2026 r., termin 2026-11-03. Dane za wrzesień 2025.'
+  it('zostawia daty zapisane w tekscie w roznych formatach', async () => {
+    const { dateAppearsIn } = await import('./clean')
+    expect(['2026-03-12', '2026-04-01', '2026-11-03'].map((d) => dateAppearsIn(d, text))).toEqual([
+      true,
+      true,
+      true,
+    ])
+  })
+
+  it('odrzuca daty zgadniete przez model (sam miesiac, przesuniety rok)', async () => {
+    const { dateAppearsIn, cleanAnalysis } = await import('./clean')
+    expect(dateAppearsIn('2025-09-01', text)).toBe(false)
+    expect(dateAppearsIn('2025-03-12', text)).toBe(false)
+    const cleaned = cleanAnalysis(
+      analysis({
+        dates: [
+          { date: '2026-03-12', context: 'zawarcie' },
+          { date: '2025-09-01', context: 'wrzesień 2025' },
+        ],
+      }),
+      text,
+    )
+    expect(cleaned.dates.map((d) => d.date)).toEqual(['2026-03-12'])
+  })
+})
