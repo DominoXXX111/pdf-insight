@@ -57,6 +57,15 @@ Przed oddaniem zleciłem dwóm osobnym agentom AI: nieniszczący test penetracyj
 - **Recenzja grafiki (7,5/10 wygląd, 7/10 UX)**. Poprawione: niebieski „długopis” mylił się z niebieskim „dat”, więc akcje są w kolorze atramentu, a kolor zostaje tylko dla danych; twarde spacje w zaznaczeniach i po jednoliterowych spójnikach (kwota nie rozjeżdża się na dwa wiersze); na telefonie przykład z zaznaczeniami przed tekstem o prywatności; JSON zawijany na telefonie; stopka na dole przy krótkich ekranach; spokojniejsze zakreślacze w ciemnym motywie; tekst dla czytników ekranu w zaznaczeniach (kolor nie jest jedynym nośnikiem informacji); obrysy próbek kolorów; poprawna odmiana liczebników (`plural`, z testem); strefa upuszczania bez migotania, klikalna i z tekstem „Wybierz plik PDF” na ekranach dotykowych. Pominięte świadomie: potwierdzanie usuwania historii.
 - Po poprawkach wyszły dwa nowe błędy, złapane na zrzutach przed wdrożeniem: logo przesunięte na środek (układ flex przy `#root`) i arkusz przykładu wychodzący poza ekran telefonu (`min-width` w kolumnie flex). Jeden test złapał też błąd w wiązaniu dwóch jednoliterowych słów pod rząd.
 
+## Finalna ocena „rekrutera” i ostatnie poprawki
+
+Ostatni agent w roli rekrutera (82/100, „zapraszamy na rozmowę”) znalazł prawdziwy błąd: w jednym przebiegu model zwrócił `"currency": "zł"` w 30 z 59 kwot, więc cała odpowiedź nie przechodziła schematu i aplikacja musiała ponawiać zapytanie. Sprawdziłem to na zapisanej odpowiedzi i poprawiłem:
+
+- **Normalizacja przed walidacją** (`normalize.ts`): „zł” → PLN, „€” → EUR, „$” → USD; kwota z nierozpoznaną walutą wypada, reszta wyniku zostaje. Ta sama odpowiedź przechodzi teraz schemat bez ponawiania (test).
+- **Filtr dat w kodzie** (`clean.ts`): data zostaje tylko, jeśli ten dzień jest zapisany w tekście dokumentu. Sprawdzony na 5 zapisanych prawdziwych odpowiedziach: wyciął wyłącznie daty zgadnięte z samego miesiąca („wrzesień 2025” → 2025-09-01) i z „I kwartału 2027”, nie wyciął żadnej prawdziwej daty.
+- **Nazwa pliku w prompcie** stoi poza blokiem `<document>`, więc Worker usuwa z niej `<`, `>` i nowe linie (test).
+- Tekst o prywatności: „Serwer niczego nie zapisuje, a historia analiz zostaje tylko w tej przeglądarce” zamiast sprzecznego z historią „Niczego nie zapisujemy”.
+
 ## Czego pilnowałem sam
 
 - Klucz API wpisałem ręcznie do `worker/.dev.vars` (plik w `.gitignore`) i do sekretów Cloudflare - nie trafił do czatu z AI ani do historii Gita.
