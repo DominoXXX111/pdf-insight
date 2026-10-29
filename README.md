@@ -95,12 +95,12 @@ npm run dev                                   # http://localhost:5173/pdf-insigh
 
 ### Zmienne środowiskowe
 
-| Zmienna                                 | Gdzie                                                          | Opis                                                                 |
-| --------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `VITE_API_URL`                          | `.env` lokalnie, _Repository variable_ w GitHub Actions        | Adres Workera, np. `https://pdf-insight-api.<subdomena>.workers.dev` |
-| `GEMINI_API_KEY`                        | `worker/.dev.vars` lokalnie, `wrangler secret put` w produkcji | Klucz Gemini - **sekret**                                            |
-| `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` | `worker/wrangler.jsonc`                                        | Model główny i zapasowy                                              |
-| `ALLOWED_ORIGINS`                       | `worker/wrangler.jsonc`, lokalnie `worker/.dev.vars`           | Dozwolone originy (CORS), po przecinku                               |
+| Zmienna                                  | Gdzie                                                          | Opis                                                                 |
+| ---------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `VITE_API_URL`                           | `.env` lokalnie, _Repository variable_ w GitHub Actions        | Adres Workera, np. `https://pdf-insight-api.<subdomena>.workers.dev` |
+| `GEMINI_API_KEY`                         | `worker/.dev.vars` lokalnie, `wrangler secret put` w produkcji | Klucz Gemini - **sekret**                                            |
+| `GEMINI_MODEL`, `GEMINI_FALLBACK_MODELS` | `worker/wrangler.jsonc`                                        | Model główny i lista modeli zapasowych (po przecinku)                |
+| `ALLOWED_ORIGINS`                        | `worker/wrangler.jsonc`, lokalnie `worker/.dev.vars`           | Dozwolone originy (CORS), po przecinku                               |
 
 ### Skrypty
 
