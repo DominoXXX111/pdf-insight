@@ -4,7 +4,8 @@ export interface Env {
   /** Sekret (wrangler secret put GEMINI_API_KEY) - nigdy w kodzie ani w repozytorium. */
   GEMINI_API_KEY: string
   GEMINI_MODEL: string
-  GEMINI_FALLBACK_MODEL?: string
+  /** Modele zapasowe oddzielone przecinkami - kazdy ma osobna pule darmowych limitow. */
+  GEMINI_FALLBACK_MODELS?: string
   /** Lista dozwolonych originow oddzielona przecinkami, np. https://user.github.io */
   ALLOWED_ORIGINS: string
   LIMITER: RateLimit
@@ -15,9 +16,9 @@ export interface Env {
 // Limit liczony w znakach tresci zapytania (przyblizenie rozmiaru w bajtach).
 const MAX_BODY_CHARS = 300_000
 const MAX_TEXT_CHARS = 120_000
-// Razem ponizej limitu czasu frontendu (45 s).
-const PRIMARY_TIMEOUT_MS = 24_000
-const FALLBACK_TIMEOUT_MS = 18_000
+// Wspolny budzet czasu na wszystkie modele - ponizej limitu frontendu (45 s).
+const TOTAL_BUDGET_MS = 40_000
+const MODEL_TIMEOUT_MS = 25_000
 
 type AnalyzeInput = { fileName: string; pages: number; text: string; part?: string }
 
@@ -64,7 +65,7 @@ function generationConfig(model: string) {
   return {
     responseMimeType: 'application/json',
     responseSchema: RESPONSE_SCHEMA,
-    temperature: 0.1,
+    temperature: 0,
     maxOutputTokens: 8192,
     // Modele Gemini 3 domyslnie dlugo "mysla" - niski poziom miesci analize w kilku sekundach.
     ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
@@ -121,11 +122,23 @@ async function callModel(
   }
 }
 
-/** Model glowny, a przy przeciazeniu lub limicie - model zapasowy (inna pula darmowych limitow). */
+/**
+ * Model glowny, a gdy wyczerpie limit (429) lub jest przeciazony - kolejne modele zapasowe.
+ * Darmowy plan Gemini ma osobny dzienny limit dla kazdego modelu.
+ */
 async function callGemini(env: Env, input: AnalyzeInput): Promise<GeminiOutcome> {
-  const first = await callModel(env, env.GEMINI_MODEL, input, PRIMARY_TIMEOUT_MS)
-  if (first.ok || !first.overloaded || !env.GEMINI_FALLBACK_MODEL) return first
-  return callModel(env, env.GEMINI_FALLBACK_MODEL, input, FALLBACK_TIMEOUT_MS)
+  const models = [env.GEMINI_MODEL, ...(env.GEMINI_FALLBACK_MODELS ?? '').split(',')]
+    .map((m) => m.trim())
+    .filter(Boolean)
+  const deadline = Date.now() + TOTAL_BUDGET_MS
+  let last: GeminiOutcome = { ok: false, status: 503, overloaded: true }
+  for (const model of models) {
+    const remaining = deadline - Date.now()
+    if (remaining < 3_000) break
+    last = await callModel(env, model, input, Math.min(MODEL_TIMEOUT_MS, remaining))
+    if (last.ok || !last.overloaded) return last
+  }
+  return last
 }
 
 export default {

@@ -6,14 +6,15 @@
   "workers_dev": true,
   "observability": { "enabled": false },
   "vars": {
-    "GEMINI_MODEL": "gemini-3.5-flash",
-    "GEMINI_FALLBACK_MODEL": "gemini-3.1-flash-lite",
+    // 3.5 Flash Lite: najstabilniejsze wyniki w testach; 3.5 Flash ma na darmowym planie tylko 20 zapytan dziennie.
+    "GEMINI_MODEL": "gemini-3.5-flash-lite",
+    "GEMINI_FALLBACK_MODELS": "gemini-3.5-flash,gemini-3.1-flash-lite",
     "ALLOWED_ORIGINS": "https://dominoxxx111.github.io",
   },
   // Limity zapytan (darmowy mechanizm Cloudflare): 10 analiz na minute z jednego IP
-  // i 30 na minute lacznie - zeby naduzycie nie wyczerpalo darmowej puli Gemini.
+  // i 60 na minute lacznie - zeby naduzycie nie wyczerpalo darmowej puli Gemini.
   "ratelimits": [
     { "name": "LIMITER", "namespace_id": "4201", "simple": { "limit": 10, "period": 60 } },
-    { "name": "GLOBAL_LIMITER", "namespace_id": "4202", "simple": { "limit": 30, "period": 60 } },
+    { "name": "GLOBAL_LIMITER", "namespace_id": "4202", "simple": { "limit": 60, "period": 60 } },
   ],
 }
