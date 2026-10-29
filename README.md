@@ -27,7 +27,7 @@ Bez własnego pliku można kliknąć **„Zobacz przykładowy wynik”** - to go
 
 ### Wygląd: zakreślacz
 
-Motywem jest to, co człowiek robi z wydrukiem umowy - zaznacza ważne rzeczy. **Kolor oznacza typ danych**: żółty to kwoty, niebieski daty, różowy strony i osoby, zielony słowa kluczowe. W podsumowaniu kwoty, daty i nazwy są zaznaczone tym samym kolorem co odpowiadające im dane (przyciski nad tekstem je włączają i wyłączają) - widać, z czego wzięły się wyciągnięte wartości. Zaznaczenia liczy kod w przeglądarce ([`src/lib/highlight.ts`](src/lib/highlight.ts)), z odpornością na polską odmianę nazw, bez dodatkowych zapytań do AI. Typografia: Bricolage Grotesque (interfejs) i Source Serif 4 (treść dokumentu); tryb jasny i ciemny, widok od 360 px, jedna animacja (zakreślacz przy ładowaniu) wyłączana przez `prefers-reduced-motion`.
+Motywem jest to, co człowiek robi z wydrukiem umowy - zaznacza ważne rzeczy. **Kolor oznacza typ danych**: żółty to kwoty, niebieski daty, różowy strony i osoby, zielony słowa kluczowe. W podsumowaniu kwoty, daty i nazwy są zaznaczone tym samym kolorem co odpowiadające im dane (przyciski nad tekstem je włączają i wyłączają) - widać, z czego wzięły się wyciągnięte wartości. Zaznaczenia liczy kod w przeglądarce ([`src/lib/highlight.ts`](src/lib/highlight.ts)), z odpornością na polską odmianę nazw, bez dodatkowych zapytań do AI. Typografia: Bricolage Grotesque (interfejs) i Source Serif 4 (treść dokumentu); tryb jasny i ciemny (domyślnie według systemu, z przełącznikiem w nagłówku zapamiętywanym w przeglądarce), widok od 360 px, jedna animacja (zakreślacz przy ładowaniu) wyłączana przez `prefers-reduced-motion`.
 
 Na umowie testowej (12 stron) cała analiza trwała w testach na żywo 6-10 s (model główny).
 

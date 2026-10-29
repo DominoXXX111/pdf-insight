@@ -248,6 +248,12 @@ export function ResultView({
 
   return (
     <section className="result">
+      <button type="button" className="back" onClick={onNew}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+        <span>Strona główna</span>
+      </button>
       {isSample && (
         <p className="sample-note" role="note">
           To przykładowy wynik przygotowany wcześniej dla fikcyjnej umowy. Nic nie zostało wysłane
