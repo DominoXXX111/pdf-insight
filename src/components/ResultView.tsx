@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { downloadJson, jsonFileName } from '../lib/download'
 import { toExportJson, type AnalysisResult } from '../lib/schema'
 
@@ -10,9 +10,19 @@ const typeLabels: Record<AnalysisResult['document']['type'], string> = {
   inne: 'Inny dokument',
 }
 
+type TabId = 'view' | 'json'
+const tabs: { id: TabId; label: string }[] = [
+  { id: 'view', label: 'Wyniki' },
+  { id: 'json', label: 'Podgląd JSON' },
+]
+
 function formatAmount(value: number, currency: string): string {
   try {
-    return new Intl.NumberFormat('pl-PL', { style: 'currency', currency }).format(value)
+    return new Intl.NumberFormat('pl-PL', {
+      style: 'currency',
+      currency,
+      useGrouping: 'always',
+    }).format(value)
   } catch {
     return `${value.toLocaleString('pl-PL')} ${currency}`
   }
@@ -35,7 +45,26 @@ function TagList({ items, empty }: { items: string[]; empty: string }) {
 }
 
 export function ResultView({ result, onNew }: { result: AnalysisResult; onNew: () => void }) {
-  const [tab, setTab] = useState<'view' | 'json'>('view')
+  const [tab, setTab] = useState<TabId>('view')
+  const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({})
+
+  // Wzorzec ARIA tabs: strzalki, Home i End przelaczaja zakladki.
+  const onTabKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    const index = tabs.findIndex((t) => t.id === tab)
+    const moves: Record<string, number> = {
+      ArrowRight: index + 1,
+      ArrowLeft: index - 1,
+      Home: 0,
+      End: tabs.length - 1,
+    }
+    const target = moves[event.key]
+    if (target === undefined) return
+    event.preventDefault()
+    const next = tabs[(target + tabs.length) % tabs.length]
+    if (!next) return
+    setTab(next.id)
+    tabRefs.current[next.id]?.focus()
+  }
   const [copied, setCopied] = useState(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   // Po pokazaniu wyniku fokus trafia na tytul - czytnik ekranu i klawiatura zaczynaja od wyniku.
@@ -92,27 +121,24 @@ export function ResultView({ result, onNew }: { result: AnalysisResult; onNew: (
         </div>
       )}
 
-      <div className="tabs" role="tablist" aria-label="Widok wyniku">
-        <button
-          type="button"
-          role="tab"
-          id="tab-view"
-          aria-selected={tab === 'view'}
-          aria-controls="panel-view"
-          onClick={() => setTab('view')}
-        >
-          Wyniki
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-json"
-          aria-selected={tab === 'json'}
-          aria-controls="panel-json"
-          onClick={() => setTab('json')}
-        >
-          Podgląd JSON
-        </button>
+      <div className="tabs" role="tablist" aria-label="Widok wyniku" onKeyDown={onTabKey}>
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            ref={(el) => {
+              tabRefs.current[t.id] = el
+            }}
+            type="button"
+            role="tab"
+            id={`tab-${t.id}`}
+            aria-selected={tab === t.id}
+            aria-controls={`panel-${t.id}`}
+            tabIndex={tab === t.id ? 0 : -1}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       {tab === 'view' ? (
