@@ -1,5 +1,6 @@
 import { ApiError, requestAnalysis, type AnalyzeRequest, type AnalyzeResponse } from '../api/client'
 import { splitIntoChunks } from './chunk'
+import { cleanAnalysis } from './clean'
 import { checkFileBasics, hasPdfHeader } from './file'
 import { describePartsForOverall, mergeChunkResults } from './merge'
 import { extractPdfText, PdfReadError } from './pdf'
@@ -108,6 +109,7 @@ export async function analyzePdf(
       )
     }
     if (!analysis) throw new AnalysisError('Brak wyniku analizy.', true)
+    analysis = cleanAnalysis(analysis)
 
     const warnings = [...analysis.warnings]
     if (pdf.pagesWithoutText.length > 0) {
