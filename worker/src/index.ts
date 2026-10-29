@@ -8,9 +8,12 @@ export interface Env {
   /** Lista dozwolonych originow oddzielona przecinkami, np. https://user.github.io */
   ALLOWED_ORIGINS: string
   LIMITER: RateLimit
+  /** Limit globalny - chroni darmowa pule Gemini, gdy ktos podrobi naglowek Origin spoza przegladarki. */
+  GLOBAL_LIMITER: RateLimit
 }
 
-const MAX_BODY_BYTES = 300_000
+// Limit liczony w znakach tresci zapytania (przyblizenie rozmiaru w bajtach).
+const MAX_BODY_CHARS = 300_000
 const MAX_TEXT_CHARS = 120_000
 // Razem ponizej limitu czasu frontendu (45 s).
 const PRIMARY_TIMEOUT_MS = 24_000
@@ -136,13 +139,14 @@ export default {
     if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, cors)
 
     const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown'
-    const { success } = await env.LIMITER.limit({ key: ip })
-    if (!success) return json({ error: 'rate_limited' }, 429, cors)
+    const perIp = await env.LIMITER.limit({ key: ip })
+    const global = await env.GLOBAL_LIMITER.limit({ key: 'all' })
+    if (!perIp.success || !global.success) return json({ error: 'rate_limited' }, 429, cors)
 
     const declared = Number(request.headers.get('Content-Length') ?? '0')
-    if (declared > MAX_BODY_BYTES) return json({ error: 'too_large' }, 413, cors)
+    if (declared > MAX_BODY_CHARS) return json({ error: 'too_large' }, 413, cors)
     const raw = await request.text()
-    if (raw.length > MAX_BODY_BYTES) return json({ error: 'too_large' }, 413, cors)
+    if (raw.length > MAX_BODY_CHARS) return json({ error: 'too_large' }, 413, cors)
 
     let parsed: unknown
     try {

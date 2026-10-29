@@ -10,8 +10,10 @@
     "GEMINI_FALLBACK_MODEL": "gemini-3.1-flash-lite",
     "ALLOWED_ORIGINS": "https://dominoxxx111.github.io",
   },
-  // Limit zapytan na adres IP (darmowy mechanizm Cloudflare): 10 analiz na minute.
+  // Limity zapytan (darmowy mechanizm Cloudflare): 10 analiz na minute z jednego IP
+  // i 30 na minute lacznie - zeby naduzycie nie wyczerpalo darmowej puli Gemini.
   "ratelimits": [
     { "name": "LIMITER", "namespace_id": "4201", "simple": { "limit": 10, "period": 60 } },
+    { "name": "GLOBAL_LIMITER", "namespace_id": "4202", "simple": { "limit": 30, "period": 60 } },
   ],
 }
