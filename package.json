@@ -11,7 +11,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "typecheck": "tsc -b && tsc -p worker"
+    "typecheck": "tsc -b && tsc -p worker",
+    "dev:api": "wrangler dev --config worker/wrangler.jsonc",
+    "deploy:api": "wrangler deploy --config worker/wrangler.jsonc"
   },
   "dependencies": {
     "pdfjs-dist": "^6.4.299",
