@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Stage } from '../lib/analyze'
 
 function stageLabel(stage: Stage): string {
@@ -63,8 +63,11 @@ export function ErrorBox({
   onRetry?: () => void
   onReset: () => void
 }) {
+  const boxRef = useRef<HTMLElement>(null)
+  useEffect(() => boxRef.current?.focus(), [])
+
   return (
-    <section className="card error" role="alert">
+    <section ref={boxRef} tabIndex={-1} className="card error" role="alert">
       <p className="status-title">Nie udało się przeanalizować pliku</p>
       <p>{message}</p>
       <div className="actions">

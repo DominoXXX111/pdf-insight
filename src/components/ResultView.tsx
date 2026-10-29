@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { downloadJson, jsonFileName } from '../lib/download'
 import { toExportJson, type AnalysisResult } from '../lib/schema'
 
@@ -37,6 +37,9 @@ function TagList({ items, empty }: { items: string[]; empty: string }) {
 export function ResultView({ result, onNew }: { result: AnalysisResult; onNew: () => void }) {
   const [tab, setTab] = useState<'view' | 'json'>('view')
   const [copied, setCopied] = useState(false)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  // Po pokazaniu wyniku fokus trafia na tytul - czytnik ekranu i klawiatura zaczynaja od wyniku.
+  useEffect(() => headingRef.current?.focus(), [])
   const { document: doc } = result
   const json = toExportJson(result)
 
@@ -55,7 +58,9 @@ export function ResultView({ result, onNew }: { result: AnalysisResult; onNew: (
       <div className="card result-head">
         <div className="result-title">
           <span className="badge">{typeLabels[doc.type]}</span>
-          <h2>{doc.title ?? doc.fileName}</h2>
+          <h2 ref={headingRef} tabIndex={-1}>
+            {doc.title ?? doc.fileName}
+          </h2>
           <p className="muted small">
             {doc.fileName} · {doc.pages} {doc.pages === 1 ? 'strona' : 'str.'} · język:{' '}
             {doc.language.toUpperCase()}

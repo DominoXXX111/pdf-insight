@@ -560,3 +560,7 @@ h3 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+[tabindex='-1']:focus {
+  outline: none;
+}
