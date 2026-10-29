@@ -63,6 +63,19 @@ describe('aiAnalysisSchema', () => {
     expect(aiAnalysisSchema.safeParse(bad).success).toBe(false)
   })
 
+  it('wymaga 3-7 kluczowych punktow', () => {
+    expect(aiAnalysisSchema.safeParse({ ...valid, keyPoints: ['a', 'b'] }).success).toBe(false)
+  })
+
+  it('pusty tytul i pusta data to brak informacji (null)', () => {
+    const parsed = aiAnalysisSchema.parse({
+      ...valid,
+      document: { ...valid.document, title: ' ', date: '' },
+    })
+    expect(parsed.document.title).toBeNull()
+    expect(parsed.document.date).toBeNull()
+  })
+
   it('odrzuca wiecej niz 7 kluczowych punktow', () => {
     const bad = { ...valid, keyPoints: Array.from({ length: 8 }, (_, i) => `punkt ${i}`) }
     expect(aiAnalysisSchema.safeParse(bad).success).toBe(false)

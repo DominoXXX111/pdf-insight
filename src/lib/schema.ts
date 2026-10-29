@@ -13,16 +13,20 @@ export const documentTypes = ['faktura', 'umowa', 'oferta', 'raport', 'inne'] as
 
 const nonEmpty = z.string().trim().min(1)
 
+/** Model czasem zwraca "" zamiast null - traktujemy to jak brak informacji. */
+const emptyToNull = (value: unknown) =>
+  typeof value === 'string' && value.trim() === '' ? null : value
+
 /** Czesc wyniku, ktora generuje model AI (bez danych znanych z samego pliku). */
 export const aiAnalysisSchema = z.object({
   document: z.object({
     language: z.string().regex(/^[a-z]{2}$/, 'Język w ISO 639-1, np. "pl"'),
     type: z.enum(documentTypes),
-    title: nonEmpty.nullable(),
-    date: isoDate.nullable(),
+    title: z.preprocess(emptyToNull, nonEmpty.nullable()),
+    date: z.preprocess(emptyToNull, isoDate.nullable()),
   }),
   summary: z.string().trim().min(20, 'Podsumowanie jest za krótkie'),
-  keyPoints: z.array(nonEmpty).min(1).max(7),
+  keyPoints: z.array(nonEmpty).min(3).max(7),
   entities: z.object({
     organizations: z.array(nonEmpty),
     people: z.array(nonEmpty),

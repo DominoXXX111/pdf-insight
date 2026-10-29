@@ -87,7 +87,7 @@ describe('analyzeValidated - ponowna proba', () => {
   it('po blednej odpowiedzi ponawia raz i zwraca poprawny wynik', async () => {
     const request = vi
       .fn()
-      .mockResolvedValueOnce({ model: 'm', result: { summary: 'zła' } })
+      .mockResolvedValueOnce({ model: 'm', result: { ...analysis(), keyPoints: ['jeden'] } })
       .mockResolvedValueOnce({ model: 'm', result: analysis() })
     const res = await analyzeValidated(body, undefined, request)
     expect(request).toHaveBeenCalledTimes(2)
