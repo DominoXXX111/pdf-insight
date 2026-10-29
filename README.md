@@ -23,6 +23,12 @@ Przeglądarka (GitHub Pages)                 Cloudflare Worker                 G
 3. **Analiza AI** - do backendu idzie sam tekst, nie plik. Worker wywołuje Gemini w trybie _structured output_ (schemat odpowiedzi), a frontend waliduje wynik schematem Zod. Odpowiedź niezgodna ze schematem: 1 ponowna próba, potem komunikat błędu.
 4. **Wynik** - podsumowanie, punkty, kwoty, daty, organizacje, osoby, słowa kluczowe, podgląd JSON i pobranie pliku `.json`. Ostatnie 8 analiz zostaje w `localStorage`.
 
+Bez własnego pliku można kliknąć **„Zobacz przykładowy wynik”** - to gotowy, ręcznie przygotowany wynik dla fikcyjnej umowy, wyraźnie oznaczony i niewysyłany do AI.
+
+### Wygląd: zakreślacz
+
+Motywem jest to, co człowiek robi z wydrukiem umowy - zaznacza ważne rzeczy. **Kolor oznacza typ danych**: żółty to kwoty, niebieski daty, różowy strony i osoby, zielony słowa kluczowe. W podsumowaniu kwoty, daty i nazwy są zaznaczone tym samym kolorem co odpowiadające im dane (przyciski nad tekstem je włączają i wyłączają) - widać, z czego wzięły się wyciągnięte wartości. Zaznaczenia liczy kod w przeglądarce ([`src/lib/highlight.ts`](src/lib/highlight.ts)), z odpornością na polską odmianę nazw, bez dodatkowych zapytań do AI. Typografia: Bricolage Grotesque (interfejs) i Source Serif 4 (treść dokumentu); tryb jasny i ciemny, widok od 360 px, jedna animacja (zakreślacz przy ładowaniu) wyłączana przez `prefers-reduced-motion`.
+
 Na umowie testowej (12 stron) cała analiza trwała w testach na żywo 6-10 s (model główny).
 
 ## Format wyniku
@@ -70,6 +76,7 @@ Schemat: [`src/lib/schema.ts`](src/lib/schema.ts) (Zod). Daty ISO 8601, waluty I
 | **`fileName` i `pages` z pliku, nie z AI**                               | To fakty znane bez modelu - model ich nie zgaduje.                                                                                                                                                                                                                                                                             |
 | **Długie dokumenty: fragmenty po stronach**                              | Tekst powyżej 60 tys. znaków jest dzielony na granicach stron, fragmenty analizowane po 2 naraz, listy łączone bez duplikatów, a podsumowanie całości powstaje z wyników fragmentów.                                                                                                                                           |
 | **Bez routera**                                                          | Aplikacja ma jeden widok ze stanami, więc problem routingu na GitHub Pages nie występuje. `base: '/pdf-insight/'` w `vite.config.ts`, worker pdf.js importowany przez `?url`, więc ścieżka uwzględnia `base`.                                                                                                                  |
+| **Deterministyczne porządki po AI**                                      | Model czasem łamie reguły promptu, więc kod po walidacji usuwa kapitał zakładowy z kwot i powtórzenia kwot/dat ([`src/lib/clean.ts`](src/lib/clean.ts)). Prompt to prośba, kod to gwarancja.                                                                                                                                   |
 
 ## Bezpieczeństwo
 
