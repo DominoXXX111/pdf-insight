@@ -11,7 +11,8 @@ export const isoDate = z
 
 export const documentTypes = ['faktura', 'umowa', 'oferta', 'raport', 'inne'] as const
 
-const nonEmpty = z.string().trim().min(1)
+// Gorne limity dlugosci chronia interfejs (np. wyszukiwanie zaznaczen) przed skrajnie dlugimi danymi.
+const nonEmpty = z.string().trim().min(1).max(600)
 
 /** Model czasem zwraca "" zamiast null - traktujemy to jak brak informacji. */
 const emptyToNull = (value: unknown) =>
@@ -80,14 +81,15 @@ export const aiAnalysisSchema = z.object({
     .string()
     .trim()
     .min(20, 'Podsumowanie jest za krótkie')
+    .max(3000, 'Podsumowanie jest za długie')
     .refine((text) => {
       const n = countSentences(text)
       return n >= 3 && n <= 5
     }, 'Podsumowanie musi mieć 3-5 zdań'),
   keyPoints: z.array(nonEmpty).min(3).max(7),
   entities: z.object({
-    organizations: z.array(nonEmpty),
-    people: z.array(nonEmpty),
+    organizations: z.array(nonEmpty).max(200),
+    people: z.array(nonEmpty).max(200),
   }),
   amounts: z.array(
     z.object({
@@ -97,7 +99,7 @@ export const aiAnalysisSchema = z.object({
     }),
   ),
   dates: z.array(z.object({ date: isoDate, context: nonEmpty })),
-  keywords: z.array(nonEmpty),
+  keywords: z.array(nonEmpty).max(50),
   // Pole dodatkowe (schemat pozwala dodawac pola): uwagi o dokumencie, np. zignorowane polecenia dla AI.
   warnings: z.array(nonEmpty).default([]),
 })
