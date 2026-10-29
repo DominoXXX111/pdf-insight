@@ -1,15 +1,15 @@
 import { useId, useRef, useState, type DragEvent } from 'react'
 
-type Props = { onFile: (file: File) => void; disabled?: boolean }
+type Props = { onFile: (file: File) => void; onSample: () => void }
 
-export function DropZone({ onFile, disabled = false }: Props) {
+export function DropZone({ onFile, onSample }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const hintId = useId()
   const [dragging, setDragging] = useState(false)
 
   const pick = (files: FileList | null) => {
     const file = files?.[0]
-    if (file && !disabled) onFile(file)
+    if (file) onFile(file)
   }
 
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
@@ -20,32 +20,31 @@ export function DropZone({ onFile, disabled = false }: Props) {
 
   return (
     <div
-      className={`dropzone${dragging ? ' is-dragging' : ''}`}
+      className={`drop${dragging ? ' is-dragging' : ''}`}
       onDragOver={(event) => {
         event.preventDefault()
-        if (!disabled) setDragging(true)
+        setDragging(true)
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={onDrop}
     >
-      <svg className="dropzone-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-        <path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3" />
-      </svg>
-      <p className="dropzone-title">Upuść tu plik PDF</p>
-      <p className="dropzone-or">albo</p>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => inputRef.current?.click()}
-        disabled={disabled}
-        aria-describedby={hintId}
-      >
-        Wybierz plik
-      </button>
-      <p id={hintId} className="muted small">
-        Tylko PDF z tekstem, maks. 10 MB
+      <p className="drop-title">{dragging ? 'Puść, żeby przeanalizować' : 'Upuść tu plik PDF'}</p>
+      <p id={hintId} className="drop-hint">
+        Umowa, faktura, oferta albo raport z warstwą tekstową, do 10 MB.
       </p>
+      <div className="actions">
+        <button
+          type="button"
+          className="btn btn-ink"
+          onClick={() => inputRef.current?.click()}
+          aria-describedby={hintId}
+        >
+          Wybierz plik
+        </button>
+        <button type="button" className="btn btn-outline" onClick={onSample}>
+          Zobacz przykładowy wynik
+        </button>
+      </div>
       <input
         ref={inputRef}
         type="file"

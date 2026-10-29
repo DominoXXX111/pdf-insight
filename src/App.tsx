@@ -2,16 +2,18 @@ import { useRef, useState } from 'react'
 import { DropZone } from './components/DropZone'
 import { HistoryList } from './components/HistoryList'
 import { ResultView } from './components/ResultView'
+import { SampleSheet } from './components/SampleSheet'
 import { ErrorBox, Progress } from './components/StatusViews'
 import { AnalysisError, analyzePdf, type Stage } from './lib/analyze'
 import { addToHistory, clearHistory, loadHistory, removeFromHistory } from './lib/history'
+import { SAMPLE_RESULT } from './lib/sample'
 import type { AnalysisResult } from './lib/schema'
 
 type State =
   | { kind: 'idle' }
   | { kind: 'working'; file: File; stage: Stage }
   | { kind: 'error'; file: File; message: string; retryable: boolean }
-  | { kind: 'done'; result: AnalysisResult }
+  | { kind: 'done'; result: AnalysisResult; isSample: boolean }
 
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'idle' })
@@ -33,7 +35,7 @@ export default function App() {
       )
       if (controller.signal.aborted) return
       setHistory(addToHistory(result))
-      setState({ kind: 'done', result })
+      setState({ kind: 'done', result, isSample: false })
     } catch (error) {
       if (controller.signal.aborted) return
       const known = error instanceof AnalysisError
@@ -54,33 +56,38 @@ export default function App() {
   return (
     <>
       <header className="topbar">
-        <button type="button" className="brand" onClick={reset}>
-          <span className="brand-mark" aria-hidden="true">
-            PDF
-          </span>
-          Insight
+        <button type="button" className="logo" onClick={reset}>
+          <span className="logo-mark" aria-hidden="true" />
+          PDF Insight
         </button>
+        <span className="muted topbar-note">Historia analiz zostaje w tej przeglądarce</span>
       </header>
 
-      <main className="container">
+      <main className="page">
         {state.kind === 'idle' && (
           <>
-            <section className="intro">
-              <h1>Podsumowanie i dane z PDF w kilka sekund</h1>
-              <p className="lead">
-                Wgraj dokument: umowę, fakturę, ofertę lub raport. Dostaniesz krótkie podsumowanie,
-                najważniejsze punkty, kwoty, daty i strony dokumentu oraz plik JSON do pobrania.
-              </p>
+            <section className="hero">
+              <div className="hero-copy">
+                <h1>Wgraj PDF. Ważne rzeczy zaznaczymy za Ciebie.</h1>
+                <p className="lead">
+                  Krótkie podsumowanie, kwoty, terminy i strony dokumentu, wyciągnięte z pliku w
+                  kilka sekund i gotowe do pobrania jako JSON.
+                </p>
+                <DropZone
+                  onFile={run}
+                  onSample={() => setState({ kind: 'done', result: SAMPLE_RESULT, isSample: true })}
+                />
+                <p className="privacy">
+                  Do analizy wysyłamy tekst z pliku, nie sam plik. Trafia on przez nasz serwer do
+                  Google Gemini API i nigdzie go nie zapisujemy. W darmowym planie Google może
+                  wykorzystywać przesłane treści, więc nie wgrywaj dokumentów poufnych.
+                </p>
+              </div>
+              <SampleSheet />
             </section>
-            <DropZone onFile={run} />
-            <p className="privacy small">
-              Tekst z pliku jest wysyłany do analizy w Google Gemini API i nie jest zapisywany na
-              naszym serwerze. W darmowym planie Google może wykorzystywać przesłane treści do
-              ulepszania swoich usług, więc nie wgrywaj dokumentów poufnych.
-            </p>
             <HistoryList
               entries={history}
-              onOpen={(entry) => setState({ kind: 'done', result: entry.result })}
+              onOpen={(entry) => setState({ kind: 'done', result: entry.result, isSample: false })}
               onRemove={(id) => setHistory(removeFromHistory(id))}
               onClear={() => {
                 clearHistory()
@@ -102,11 +109,13 @@ export default function App() {
           />
         )}
 
-        {state.kind === 'done' && <ResultView result={state.result} onNew={reset} />}
+        {state.kind === 'done' && (
+          <ResultView result={state.result} isSample={state.isSample} onNew={reset} />
+        )}
       </main>
 
-      <footer className="footer muted small">
-        PDF Insight · React + TypeScript · Cloudflare Workers · Gemini
+      <footer className="footer muted">
+        PDF Insight, zadanie rekrutacyjne. React, TypeScript, Cloudflare Workers i Gemini.
       </footer>
     </>
   )

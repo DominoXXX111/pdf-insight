@@ -12,14 +12,13 @@ const dateTime = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'short', timeStyl
 export function HistoryList({ entries, onOpen, onRemove, onClear }: Props) {
   if (entries.length === 0) return null
   return (
-    <section className="card history" aria-labelledby="history-title">
+    <section className="history" aria-labelledby="history-title">
       <div className="history-head">
         <h2 id="history-title">Ostatnie analizy</h2>
-        <button type="button" className="btn btn-ghost btn-small" onClick={onClear}>
-          Wyczyść
+        <button type="button" className="link" onClick={onClear}>
+          Wyczyść historię
         </button>
       </div>
-      <p className="muted small">Zapisane tylko w tej przeglądarce.</p>
       <ul>
         {entries.map((entry) => (
           <li key={entry.id}>
@@ -27,13 +26,13 @@ export function HistoryList({ entries, onOpen, onRemove, onClear }: Props) {
               <span className="history-name">
                 {entry.result.document.title ?? entry.result.document.fileName}
               </span>
-              <span className="muted small">
-                {entry.result.document.fileName} · {dateTime.format(new Date(entry.savedAt))}
+              <span className="muted">
+                {entry.result.document.fileName}, {dateTime.format(new Date(entry.savedAt))}
               </span>
             </button>
             <button
               type="button"
-              className="btn btn-ghost btn-small"
+              className="link"
               onClick={() => onRemove(entry.id)}
               aria-label={`Usuń z historii: ${entry.result.document.fileName}`}
             >

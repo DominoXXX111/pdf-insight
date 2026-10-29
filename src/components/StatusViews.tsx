@@ -4,13 +4,13 @@ import type { Stage } from '../lib/analyze'
 function stageLabel(stage: Stage): string {
   switch (stage.step) {
     case 'reading':
-      return 'Odczytuję tekst z PDF…'
+      return 'Odczytuję tekst z PDF'
     case 'analyzing':
       return stage.total > 1
-        ? `Analiza AI: fragment ${Math.min(stage.done + 1, stage.total - 1)} z ${stage.total - 1}…`
-        : 'Analiza AI: podsumowanie i dane…'
+        ? `Analizuję fragment ${Math.min(stage.done + 1, stage.total - 1)} z ${stage.total - 1}`
+        : 'Szukam kwot, dat i stron dokumentu'
     case 'merging':
-      return 'Łączę wyniki fragmentów…'
+      return 'Łączę wyniki fragmentów'
   }
 }
 
@@ -34,22 +34,31 @@ export function Progress({
   const active = stage.step === 'reading' ? 1 : 2
 
   return (
-    <section className="card status" aria-live="polite" aria-busy="true">
-      <ol className="steps">
-        {steps.map((label, i) => (
-          <li key={label} className={i < active ? 'done' : i === active ? 'active' : ''}>
-            {label}
-          </li>
-        ))}
-      </ol>
-      <div className="spinner" aria-hidden="true" />
-      <p className="status-title">{stageLabel(stage)}</p>
-      <p className="muted small">
-        {fileName} · {seconds} s
-      </p>
-      <button type="button" className="btn btn-ghost" onClick={onCancel}>
-        Anuluj
-      </button>
+    <section className="status" aria-live="polite" aria-busy="true">
+      {/* Jedyna animacja w aplikacji: zakreslacz przesuwa sie po "czytanym" arkuszu. */}
+      <div className="sheet reading-sheet" aria-hidden="true">
+        <span className="line" />
+        <span className="line short" />
+        <span className="line" />
+        <span className="line mid" />
+        <span className="line" />
+      </div>
+      <div className="status-text">
+        <p className="status-title">{stageLabel(stage)}…</p>
+        <p className="muted">
+          {fileName}, {seconds} s
+        </p>
+        <ol className="steps">
+          {steps.map((label, i) => (
+            <li key={label} className={i < active ? 'done' : i === active ? 'active' : ''}>
+              {label}
+            </li>
+          ))}
+        </ol>
+        <button type="button" className="btn btn-outline" onClick={onCancel}>
+          Anuluj
+        </button>
+      </div>
     </section>
   )
 }
@@ -67,16 +76,16 @@ export function ErrorBox({
   useEffect(() => boxRef.current?.focus(), [])
 
   return (
-    <section ref={boxRef} tabIndex={-1} className="card error" role="alert">
-      <p className="status-title">Nie udało się przeanalizować pliku</p>
+    <section ref={boxRef} tabIndex={-1} className="error" role="alert">
+      <h2>Nie udało się przeanalizować pliku</h2>
       <p>{message}</p>
       <div className="actions">
         {onRetry && (
-          <button type="button" className="btn btn-primary" onClick={onRetry}>
+          <button type="button" className="btn btn-ink" onClick={onRetry}>
             Spróbuj ponownie
           </button>
         )}
-        <button type="button" className="btn btn-ghost" onClick={onReset}>
+        <button type="button" className="btn btn-outline" onClick={onReset}>
           Wybierz inny plik
         </button>
       </div>
