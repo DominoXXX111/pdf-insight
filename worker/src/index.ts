@@ -4,6 +4,7 @@ export interface Env {
   /** Sekret (wrangler secret put GEMINI_API_KEY) - nigdy w kodzie ani w repozytorium. */
   GEMINI_API_KEY: string
   GEMINI_MODEL: string
+  GEMINI_FALLBACK_MODEL?: string
   /** Lista dozwolonych originow oddzielona przecinkami, np. https://user.github.io */
   ALLOWED_ORIGINS: string
   LIMITER: RateLimit
@@ -11,7 +12,9 @@ export interface Env {
 
 const MAX_BODY_BYTES = 300_000
 const MAX_TEXT_CHARS = 120_000
-const GEMINI_TIMEOUT_MS = 40_000
+// Razem ponizej limitu czasu frontendu (45 s).
+const PRIMARY_TIMEOUT_MS = 24_000
+const FALLBACK_TIMEOUT_MS = 18_000
 
 type AnalyzeInput = { fileName: string; pages: number; text: string; part?: string }
 
@@ -60,54 +63,66 @@ function generationConfig(model: string) {
     responseSchema: RESPONSE_SCHEMA,
     temperature: 0.1,
     maxOutputTokens: 8192,
-    // Modele 2.5 domyslnie "mysla" - wylaczamy to, zeby zmiescic sie w 30 s.
-    ...(model.startsWith('gemini-2.5') ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+    // Modele Gemini 3 domyslnie dlugo "mysla" - niski poziom miesci analize w kilku sekundach.
+    ...(model.startsWith('gemini-3') ? { thinkingConfig: { thinkingLevel: 'low' } } : {}),
   }
 }
 
-type GeminiOutcome = { ok: true; result: unknown } | { ok: false; status: number }
+type GeminiOutcome =
+  { ok: true; model: string; result: unknown } | { ok: false; status: number; overloaded: boolean }
 
-async function callGemini(env: Env, input: AnalyzeInput): Promise<GeminiOutcome> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent`
-  const body = JSON.stringify({
-    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-    contents: [{ role: 'user', parts: [{ text: buildUserPrompt(input) }] }],
-    generationConfig: generationConfig(env.GEMINI_MODEL),
-  })
-
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    let res: Response
-    try {
-      res = await fetch(url, {
+async function callModel(
+  env: Env,
+  model: string,
+  input: AnalyzeInput,
+  timeoutMs: number,
+): Promise<GeminiOutcome> {
+  let res: Response
+  try {
+    res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-        body,
-        signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-      })
-    } catch {
-      return { ok: false, status: 504 }
-    }
-
-    // Przeciazenie po stronie Google - jedna szybka ponowna proba.
-    if ((res.status === 503 || res.status === 500) && attempt === 1) {
-      await new Promise((r) => setTimeout(r, 800))
-      continue
-    }
-    if (res.status === 429 || res.status === 503) return { ok: false, status: 503 }
-    if (!res.ok) return { ok: false, status: 502 }
-
-    const data = (await res.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[]
-    }
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
-    try {
-      return { ok: true, result: JSON.parse(text) }
-    } catch {
-      // Uciety lub niepoprawny JSON - frontend potraktuje to jak bledna odpowiedz i ponowi.
-      return { ok: true, result: null }
-    }
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: 'user', parts: [{ text: buildUserPrompt(input) }] }],
+          generationConfig: generationConfig(model),
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
+      },
+    )
+  } catch {
+    return { ok: false, status: 504, overloaded: true }
   }
-  return { ok: false, status: 503 }
+
+  if (!res.ok) {
+    // 429/503/500 - limit lub przeciazenie po stronie Google; 404 - model wycofany.
+    const overloaded = [404, 429, 500, 503].includes(res.status)
+    return { ok: false, status: overloaded ? 503 : 502, overloaded }
+  }
+
+  const data = (await res.json()) as {
+    candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[]
+  }
+  const text =
+    data.candidates?.[0]?.content?.parts
+      ?.filter((p) => !p.thought)
+      .map((p) => p.text ?? '')
+      .join('') ?? ''
+  try {
+    return { ok: true, model, result: JSON.parse(text) }
+  } catch {
+    // Uciety lub niepoprawny JSON - frontend potraktuje to jak bledna odpowiedz i ponowi.
+    return { ok: true, model, result: null }
+  }
+}
+
+/** Model glowny, a przy przeciazeniu lub limicie - model zapasowy (inna pula darmowych limitow). */
+async function callGemini(env: Env, input: AnalyzeInput): Promise<GeminiOutcome> {
+  const first = await callModel(env, env.GEMINI_MODEL, input, PRIMARY_TIMEOUT_MS)
+  if (first.ok || !first.overloaded || !env.GEMINI_FALLBACK_MODEL) return first
+  return callModel(env, env.GEMINI_FALLBACK_MODEL, input, FALLBACK_TIMEOUT_MS)
 }
 
 export default {
@@ -142,6 +157,6 @@ export default {
     // Tresc dokumentu nie jest nigdzie zapisywana ani logowana.
     const outcome = await callGemini(env, input)
     if (!outcome.ok) return json({ error: 'ai_error' }, outcome.status, cors)
-    return json({ model: env.GEMINI_MODEL, result: outcome.result }, 200, cors)
+    return json({ model: outcome.model, result: outcome.result }, 200, cors)
   },
 } satisfies ExportedHandler<Env>

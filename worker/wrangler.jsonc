@@ -6,7 +6,8 @@
   "workers_dev": true,
   "observability": { "enabled": false },
   "vars": {
-    "GEMINI_MODEL": "gemini-2.5-flash",
+    "GEMINI_MODEL": "gemini-3.5-flash",
+    "GEMINI_FALLBACK_MODEL": "gemini-3.1-flash-lite",
     "ALLOWED_ORIGINS": "https://dominoxxx111.github.io",
   },
   // Limit zapytan na adres IP (darmowy mechanizm Cloudflare): 10 analiz na minute.
