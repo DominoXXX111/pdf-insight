@@ -78,8 +78,9 @@ export default function App() {
                 />
                 <p className="privacy">
                   Wysyłamy tylko tekst z pliku, nie sam plik: przez nasz serwer do Google Gemini
-                  API. Niczego nie zapisujemy. W darmowym planie Google może wykorzystywać przesłane
-                  treści, więc nie wgrywaj poufnych dokumentów.
+                  API. Serwer niczego nie zapisuje, a historia analiz zostaje tylko w tej
+                  przeglądarce. W darmowym planie Google może wykorzystywać przesłane treści, więc
+                  nie wgrywaj poufnych dokumentów.
                 </p>
               </div>
               <SampleSheet />
