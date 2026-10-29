@@ -8,7 +8,7 @@ import type { AiAnalysis } from './schema'
 
 const analysis = (over: Partial<AiAnalysis> = {}): AiAnalysis => ({
   document: { language: 'pl', type: 'umowa', title: 'Umowa', date: '2026-03-12' },
-  summary: 'Krótkie podsumowanie dokumentu testowego.',
+  summary: 'Pierwsze zdanie podsumowania. Drugie zdanie podsumowania. Trzecie zdanie podsumowania.',
   keyPoints: ['a', 'b', 'c'],
   entities: { organizations: [], people: [] },
   amounts: [],
@@ -72,12 +72,12 @@ describe('laczenie wynikow fragmentow', () => {
           ],
         }),
       ],
-      analysis({ summary: 'Podsumowanie całości dokumentu.' }),
+      analysis({ summary: 'Całość dokumentu. Zdanie drugie. Zdanie trzecie.' }),
     )
     expect(merged.entities.organizations).toEqual(['Kwadrat Software S.A.'])
     expect(merged.entities.people).toEqual(['Anna Kowalczyk', 'Jan Nowak'])
     expect(merged.amounts).toHaveLength(2)
-    expect(merged.summary).toBe('Podsumowanie całości dokumentu.')
+    expect(merged.summary).toBe('Całość dokumentu. Zdanie drugie. Zdanie trzecie.')
   })
 })
 

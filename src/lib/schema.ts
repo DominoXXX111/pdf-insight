@@ -17,6 +17,57 @@ const nonEmpty = z.string().trim().min(1)
 const emptyToNull = (value: unknown) =>
   typeof value === 'string' && value.trim() === '' ? null : value
 
+// Skroty, po ktorych zwykle stoi nazwa lub liczba pisana wielka litera - kropka nie konczy zdania.
+const NO_BREAK_BEFORE_CAPITAL = new Set([
+  'ul',
+  'al',
+  'pl',
+  'os',
+  'dr',
+  'inż',
+  'mgr',
+  'prof',
+  'św',
+  'nr',
+  'np',
+  'tj',
+  'tzw',
+  'm.in',
+  'ok',
+  'godz',
+  'pkt',
+  'ust',
+  'art',
+  'poz',
+  'str',
+  'zał',
+  'mr',
+  'mrs',
+  'ms',
+  'st',
+  'no',
+  'vs',
+  'e.g',
+  'i.e',
+])
+
+/**
+ * Przyblizona liczba zdan - dla wymogu "3-5 zdan" w podsumowaniu.
+ * Granica zdania: . ! ? po ktorym jest wielka litera; wyjatki: inicjaly ("J. Kowalski")
+ * i skroty z listy ("ul. Portowa"). "sp. z o.o." lub "S.A." na koncu zdania licza sie jako koniec.
+ */
+export function countSentences(text: string): number {
+  const trimmed = text.trim()
+  if (!/\p{L}/u.test(trimmed)) return 0
+  let count = 1
+  for (const match of trimmed.matchAll(/(\S+?)[.!?…]+\s+(?=[\p{Lu}„"«(])/gu)) {
+    const word = (match[1] ?? '').toLocaleLowerCase()
+    const isInitial = /^\p{Lu}$/u.test(match[1] ?? '')
+    if (!isInitial && !NO_BREAK_BEFORE_CAPITAL.has(word)) count++
+  }
+  return count
+}
+
 /** Czesc wyniku, ktora generuje model AI (bez danych znanych z samego pliku). */
 export const aiAnalysisSchema = z.object({
   document: z.object({
@@ -25,7 +76,14 @@ export const aiAnalysisSchema = z.object({
     title: z.preprocess(emptyToNull, nonEmpty.nullable()),
     date: z.preprocess(emptyToNull, isoDate.nullable()),
   }),
-  summary: z.string().trim().min(20, 'Podsumowanie jest za krótkie'),
+  summary: z
+    .string()
+    .trim()
+    .min(20, 'Podsumowanie jest za krótkie')
+    .refine((text) => {
+      const n = countSentences(text)
+      return n >= 3 && n <= 5
+    }, 'Podsumowanie musi mieć 3-5 zdań'),
   keyPoints: z.array(nonEmpty).min(3).max(7),
   entities: z.object({
     organizations: z.array(nonEmpty),

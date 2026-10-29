@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { aiAnalysisSchema, analysisResultSchema, isoDate, toExportJson } from './schema'
+import {
+  aiAnalysisSchema,
+  analysisResultSchema,
+  countSentences,
+  isoDate,
+  toExportJson,
+} from './schema'
 
 const valid = {
   document: { language: 'pl', type: 'umowa', title: 'Umowa serwisowa', date: '2026-09-01' },
-  summary: 'Umowa określa zasady świadczenia usług serwisowych. Obowiązuje przez 12 miesięcy.',
+  summary:
+    'Umowa określa zasady świadczenia usług serwisowych. Obowiązuje przez 12 miesięcy. Wynagrodzenie wynosi 12 500 zł.',
   keyPoints: ['Okres umowy 12 mies.', 'Wynagrodzenie 12 500 zł', 'SLA 99,5%'],
   entities: { organizations: ['Przykład sp. z o.o.'], people: [] },
   amounts: [{ value: 12500, currency: 'PLN', context: 'wynagrodzenie' }],
@@ -130,5 +137,24 @@ describe('analysisResultSchema i eksport', () => {
       'title',
       'date',
     ])
+  })
+})
+
+describe('countSentences i wymog 3-5 zdan', () => {
+  it.each([
+    ['Umowę zawarto 12.03.2026 r. pomiędzy Alfa sp. z o.o. a Beta S.A. Obowiązuje rok.', 2],
+    ['Strony: Alfa sp. z o.o. Wykonawcą jest Beta S.A. Umowa trwa do 2027 r. Koniec.', 4],
+    ['Siedziba: ul. Portowa 18, Gdańsk. Reprezentuje J. Kowalski. Kwota: ok. 1.5 mln zł.', 3],
+    ['Czy to działa? Tak! A to trzecie zdanie…', 3],
+    ['', 0],
+  ])('%s -> %i', (text, expected) => {
+    expect(countSentences(text)).toBe(expected)
+  })
+
+  it('odrzuca podsumowanie z 2 i z 6 zdaniami', () => {
+    const two = { ...valid, summary: 'Pierwsze zdanie jest tutaj. Drugie zdanie jest tutaj.' }
+    const six = { ...valid, summary: 'Zdanie numer jeden. '.repeat(6).trim() }
+    expect(aiAnalysisSchema.safeParse(two).success).toBe(false)
+    expect(aiAnalysisSchema.safeParse(six).success).toBe(false)
   })
 })
