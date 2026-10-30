@@ -100,11 +100,11 @@ export default function App() {
                 />
                 <p className="privacy">
                   <strong>To wersja demonstracyjna na darmowym planie Gemini API.</strong> Wysyłamy
-                  tylko tekst z pliku, nie sam plik, przez nasz serwer do Google. Serwer niczego nie
-                  zapisuje, a historia analiz zostaje tylko w tej przeglądarce. Na darmowym planie
-                  Google może wykorzystywać przesłane treści, więc nie wgrywaj prawdziwych umów z
-                  danymi osobowymi czy tajemnicą firmy. Przy płatnym planie Google nie wykorzystuje
-                  danych do ulepszania usług.
+                  tylko tekst z pliku, nie sam plik, przez nasz serwer do modelu AI Google Gemini.
+                  Serwer niczego nie zapisuje, a historia analiz zostaje tylko w tej przeglądarce.
+                  Na darmowym planie Google może wykorzystywać przesłane treści, więc nie wgrywaj
+                  prawdziwych umów z danymi osobowymi czy tajemnicą firmy. Przy płatnym planie
+                  Google nie wykorzystuje danych do ulepszania usług.
                 </p>
               </div>
               <SampleSheet />
