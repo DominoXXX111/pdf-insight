@@ -88,8 +88,16 @@ Schemat: [`src/lib/schema.ts`](src/lib/schema.ts) (Zod). Daty ISO 8601, waluty I
 - **Content-Security-Policy** - GitHub Pages nie pozwala ustawiać nagłówków HTTP, więc build dodaje CSP jako `<meta>` (skrypty tylko z własnej domeny, `connect-src` tylko do API, bez `object`/`base`/`form`) i `referrer: no-referrer` ([`vite.config.ts`](vite.config.ts)). `frame-ancestors` i `X-Frame-Options` nie działają w `<meta>` - to ograniczenie hostingu.
 - **Limity długości w schemacie** - teksty z AI mają górne limity (np. podsumowanie do 3000 znaków), co chroni interfejs przed skrajnie długimi danymi.
 - **Test penetracyjny** (osobny agent AI, nieniszczący): bez podatności średnich ani wyższych; sprawdzone m.in. wycieki klucza (historia Gita, bundle, source mapy), CORS z `null`/obcym/brakującym `Origin`, prototype pollution, głębokie zagnieżdżenie JSON, prompt injection z próbą wycieku promptu i wstrzyknięcia HTML, `npm audit` (0 podatności), wersja pdf.js (niepodatna na CVE-2024-4367).
-- **Informacja dla użytkownika**, że tekst trafia do Google Gemini API i że w darmowym planie Google może go wykorzystywać do ulepszania usług.
+- **Informacja dla użytkownika** przed wgraniem pliku: że to wersja demo, że tekst (nie plik) trafia przez nasz serwer do Google Gemini API i że na darmowym planie Google może go wykorzystywać do ulepszania usług - więc nie należy wgrywać prawdziwych umów z danymi osobowymi czy tajemnicą firmy.
 - Worker nie zapisuje ani nie loguje treści dokumentów (`observability` wyłączone).
+
+## Prawdziwe dokumenty - droga do produkcji
+
+Umowy to zwykle dokumenty poufne, a demo działa na darmowym planie Gemini, na którym Google może wykorzystywać przesłane treści. Dlatego aplikacja wprost prosi, żeby nie wgrywać do niej prawdziwych umów. Do pracy na prawdziwych dokumentach:
+
+1. **Płatny plan Gemini API albo Vertex AI** - przy płatnym planie Google nie wykorzystuje danych do ulepszania usług; Vertex AI daje dodatkowo umowę powierzenia przetwarzania danych (RODO) i przetwarzanie w regionie UE. W kodzie to zmiana klucza i ewentualnie adresu API w Workerze.
+2. **Maskowanie danych w przeglądarce przed wysłaniem** - NIP, PESEL, numery kont, e-maile i telefony zamieniane na znaczniki (np. `[NIP_1]`), a po odpowiedzi podstawiane z powrotem. Prawdziwe wartości nie opuszczają przeglądarki, a do analizy umowy nie są potrzebne.
+3. **Model uruchamiany lokalnie** (np. w infrastrukturze firmy) - gdy dokumenty w ogóle nie mogą wyjść poza firmę. Architektura się nie zmienia: frontend wysyła tekst do własnego backendu, a ten do wybranego modelu.
 
 ## Uruchomienie lokalne
 
@@ -149,7 +157,7 @@ worker/src/
 - **Brak OCR** - skany bez warstwy tekstowej nie są analizowane. Dokument w całości zeskanowany kończy się czytelnym komunikatem, a pojedyncze strony-skany (np. str. 11 umowy testowej) są wymienione w uwagach.
 - **Układ wielokolumnowy i tabele** - pdf.js zwraca tekst w kolejności z pliku; w rzadkich układach kolumny mogą się przeplatać. Model zwykle sobie radzi, ale to możliwe źródło błędów.
 - **Darmowy limit Gemini** - przy dużym ruchu możliwe są błędy 503/429 (komunikat z opcją ponowienia); model zapasowy łagodzi problem.
-- **Prywatność** - w darmowym planie Gemini Google może wykorzystywać przesłane treści; aplikacja o tym informuje. Do dokumentów poufnych potrzebny byłby płatny plan.
+- **Prywatność** - demo działa na darmowym planie Gemini, na którym Google może wykorzystywać przesłane treści; aplikacja o tym informuje przed wgraniem pliku. Do poufnych dokumentów - patrz „Prawdziwe dokumenty - droga do produkcji”.
 - **Limit zapytań** jest liczony przez Cloudflare per lokalizację - chroni przed nadużyciem, ale nie jest dokładnym, twardym limitem. CORS chroni przed innymi stronami w przeglądarce; zapytania spoza przeglądarki (z podrobionym `Origin`) ogranicza tylko limit.
 - **Bardzo długie dokumenty** - N fragmentów to N+1 zapytań; dokument powyżej ok. 9 fragmentów (~540 tys. znaków) może przekroczyć limit zapytań, a czas analizy przekroczy 30 s.
 - **Darmowe limity Gemini są dzienne i liczone per model** - przy dużym ruchu kolejne modele z łańcucha się wyczerpują; ostatni (3.1 Flash Lite) jest mniej dokładny i może pominąć część mniej istotnych kwot i dat. Wyniki AI nie są w 100% powtarzalne - sporadycznie model pominie pojedynczą datę lub kwotę.
